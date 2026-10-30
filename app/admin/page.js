@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import useProfile from '../../components/useProfile';
-import { ROLE_LABEL } from '../../lib/constants';
+import { ROLE_LABEL } from '../../lib/constants'; import { COLLEGES } from '../../lib/colleges';
 
 export default function Admin() {
   const profile = useProfile();
@@ -154,7 +154,7 @@ export default function Admin() {
             <option value="">Any category</option>
             {cats.map((c) => <option key={c.name}>{c.name}</option>)}
           </select>
-          <input placeholder="College (blank = any)" value={rule.college} onChange={(e) => setRule({ ...rule, college: e.target.value })} />
+          <select value={rule.college} onChange={(e) => setRule({ ...rule, college: e.target.value })}><option value="">Any college</option>{COLLEGES.map((c) => <option key={c} value={c}>{c}</option>)}</select>
           <select value={rule.assign_role} onChange={(e) => setRule({ ...rule, assign_role: e.target.value })}>
             <option value="anchor">Anchor</option>
             <option value="mentor">Mentor</option>

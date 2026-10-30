@@ -2,16 +2,19 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
+import { COLLEGES, ZONES } from '../../lib/colleges';
 
 export default function Signup() {
   const router = useRouter();
   const [f, setF] = useState({
-    name: '', maatramId: '', password: '', confirm: '', role: 'student', college: '', zone: '',
+    name: '', maatramId: '', password: '', confirm: '', role: 'student',
+    college: '', otherCollege: '', zone: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const isOffice = f.role === 'office';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -28,6 +31,11 @@ export default function Signup() {
     const cleanId = f.maatramId.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     if (!cleanId) {
       setError('Enter a valid Maatram ID.');
+      return;
+    }
+    const college = f.college === 'Other' ? f.otherCollege.trim() : f.college;
+    if (!isOffice && (!college || !f.zone)) {
+      setError('Please choose your college and zone.');
       return;
     }
 
@@ -54,8 +62,8 @@ export default function Signup() {
       maatram_id: f.maatramId.trim().toUpperCase(),
       name: f.name.trim(),
       role: f.role,
-      college: f.college.trim(),
-      zone: f.zone.trim(),
+      college: college || null,
+      zone: f.zone || null,
     });
 
     if (profErr) {
@@ -92,11 +100,30 @@ export default function Signup() {
           <option value="office">Office Team</option>
         </select>
 
-        <label>College</label>
-        <input value={f.college} onChange={set('college')} />
+        {!isOffice && (
+          <>
+            <label>College</label>
+            <select value={f.college} onChange={set('college')}>
+              <option value="">Select your college</option>
+              {COLLEGES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <option value="Other">Other</option>
+            </select>
+            {f.college === 'Other' && (
+              <input
+                style={{ marginTop: 8 }}
+                placeholder="Type your college name"
+                value={f.otherCollege}
+                onChange={set('otherCollege')}
+              />
+            )}
 
-        <label>Zone</label>
-        <input value={f.zone} onChange={set('zone')} />
+            <label>Zone</label>
+            <select value={f.zone} onChange={set('zone')}>
+              <option value="">Select your zone</option>
+              {ZONES.map((z) => <option key={z} value={z}>{z}</option>)}
+            </select>
+          </>
+        )}
 
         {error && <p className="msg-error">{error}</p>}
 

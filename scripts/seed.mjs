@@ -6,8 +6,8 @@ const PASSWORD = 'Dummy@12345';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
-const colleges = ['Anna Arts College', 'Sri Vidya Engineering', 'St Mary Science College', 'Greenfield Polytechnic', 'Lakeview Commerce College'];
-const zones = ['North Zone', 'South Zone'];
+const colleges = ['Sathyabama Institute of Science and Technology', 'Sona College of Technology', 'Velammal Engineering College', 'SRM Easwari Engineering College', 'Jeppiaar Institute of Technology'];
+const zones = ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4'];
 const cats = ['Admission', 'Scholarship', 'Events', 'Mentoring', 'Technical', 'Other'];
 const channels = ['WhatsApp', 'Phone call', 'Email', 'Form', 'In person'];
 const prios = ['Low', 'Medium', 'High'];
@@ -26,12 +26,12 @@ const people = [];
 const add = (id, name, role, college, zone) => people.push({ id, name, role, college, zone });
 add('DOFFICE01', 'Demo Office 1', 'office', 'Maatram HQ', 'All');
 add('DOFFICE02', 'Demo Office 2', 'office', 'Maatram HQ', 'All');
-add('DZONE01', 'Demo Zone Incharge 1', 'zone', colleges[0], zones[0]);
+add('DZONE01', 'Demo Zone Incharge 1', 'zone', colleges[0], zones[0]); add('DZONE03', 'Demo Zone Incharge 3', 'zone', colleges[2], zones[2]); add('DZONE04', 'Demo Zone Incharge 4', 'zone', colleges[4], zones[3]);
 add('DZONE02', 'Demo Zone Incharge 2', 'zone', colleges[3], zones[1]);
-for (let i = 1; i <= 3; i++) add(`DMENTOR0${i}`, `Demo Mentor ${i}`, 'mentor', colleges[i - 1], zones[i % 2]);
-for (let i = 1; i <= 4; i++) add(`DANCHOR0${i}`, `Demo Anchor ${i}`, 'anchor', colleges[(i - 1) % 5], zones[i % 2]);
+for (let i = 1; i <= 3; i++) add(`DMENTOR0${i}`, `Demo Mentor ${i}`, 'mentor', colleges[i - 1], zones[i % 4]);
+for (let i = 1; i <= 4; i++) add(`DANCHOR0${i}`, `Demo Anchor ${i}`, 'anchor', colleges[(i - 1) % 5], zones[i % 4]);
 for (let i = 1; i <= 50; i++) {
-  add(`DSTU${String(i).padStart(3, '0')}`, `Demo Student ${i}`, 'student', colleges[i % 5], zones[i % 2]);
+  add(`DSTU${String(i).padStart(3, '0')}`, `Demo Student ${i}`, 'student', colleges[i % 5], zones[i % 4]);
 }
 
 async function make(p) {
