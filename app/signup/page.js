@@ -85,7 +85,7 @@ export default function Signup() {
         <label>Maatram ID</label>
         <input value={f.maatramId} onChange={set('maatramId')} required />
 
-        <label>Email for notifications (optional)</label><input type="email" value={f.email} onChange={set('email')} /><p className="small">Only used to send you reminders. Nobody else can see it.</p><label>Create a password (at least 8 characters)</label>
+        <label>Email for notifications</label><input type="email" value={f.email} onChange={set('email')} required /><p className="small">Only used to send you reminders. Nobody else can see it.</p><label>Create a password (at least 8 characters)</label>
         <input type="password" value={f.password} onChange={set('password')} required />
 
         <label>Confirm password</label>
