@@ -7,7 +7,7 @@ import { COLLEGES, ZONES } from '../../lib/colleges';
 export default function Signup() {
   const router = useRouter();
   const [f, setF] = useState({
-    name: '', maatramId: '', email: '', password: '', confirm: '', role: 'student',
+    name: '', maatramId: '', email: '', password: '', confirm: '', role: 'student', year: '',
     college: '', otherCollege: '', zone: '',
   });
   const [error, setError] = useState('');
@@ -39,7 +39,7 @@ export default function Signup() {
       return;
     }
 
-    setLoading(true);
+    if ((f.role === 'student' || f.role === 'anchor') && !f.year) { setError('Please choose the year of study.'); return; } setLoading(true);
     const { data, error: signErr } = await supabase.auth.signUp({
       email: `${cleanId}@maatram.app`,
       password: f.password,
@@ -63,7 +63,7 @@ export default function Signup() {
       name: f.name.trim(),
       role: f.role,
       college: college || null,
-      zone: f.zone || null,
+      zone: f.zone || null, year: f.year ? Number(f.year) : null,
     });
 
     if (profErr) {
@@ -125,6 +125,18 @@ export default function Signup() {
           </>
         )}
 
+        {(f.role === 'student' || f.role === 'anchor') && (
+          <>
+            <label>{f.role === 'anchor' ? 'Year of students you mentor' : 'Year of study'}</label>
+            <select value={f.year} onChange={set('year')}>
+              <option value="">Select year</option>
+              <option value="1">1st year</option>
+              <option value="2">2nd year</option>
+              <option value="3">3rd year</option>
+              <option value="4">4th year</option>
+            </select>
+          </>
+        )}
         {error && <p className="msg-error">{error}</p>}
 
         <div style={{ textAlign: 'center', marginTop: 20 }}>

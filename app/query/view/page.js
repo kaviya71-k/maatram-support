@@ -24,7 +24,7 @@ function Detail() {
     if (!id) return;
     const { data } = await supabase
       .from('queries')
-      .select('*, student:profiles!student_id(name,maatram_id,college,zone), assignee:profiles!assigned_to(name,role)')
+      .select('*, student:profiles!student_id(name,maatram_id,college,zone,year), assignee:profiles!assigned_to(name,role)')
       .eq('id', id)
       .single();
     setQ(data);
@@ -35,7 +35,7 @@ function Detail() {
       .eq('query_id', id)
       .order('created_at', { ascending: true });
     setHistory(h || []);
-    const { data: s } = await supabase.from('profiles').select('id,name,role').neq('role', 'student').order('name');
+    const { data: s } = await supabase.from('profiles').select('id,name,role,college,year').neq('role', 'student').order('name');
     setStaff(s || []);
   }, [id]);
 
@@ -159,7 +159,7 @@ function Detail() {
           <label>Assign / reassign to</label>
           <select value={assignTo} onChange={(e) => setAssignTo(e.target.value)}>
             <option value="">Choose a person</option>
-            {staff.map((s) => <option key={s.id} value={s.id}>{s.name} ({ROLE_LABEL[s.role]})</option>)}
+            {staff.filter((s) => s.role !== 'anchor' || (s.college === q.student?.college && s.year === q.student?.year)).map((s) => <option key={s.id} value={s.id}>{s.name} ({ROLE_LABEL[s.role]})</option>)}
           </select>
           <button className="btn" disabled={busy || !assignTo} onClick={assign}>Assign</button>
 
