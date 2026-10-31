@@ -84,7 +84,7 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      <h1>Welcome, {profile.name}</h1>
+      <h1>Welcome, {profile.name}</h1><p className="small"><Link href="/settings">Notification email settings</Link></p>
       <p className="small">
         <span className="badge">{ROLE_LABEL[profile.role]}</span> {profile.maatram_id}
         {profile.college ? ` - ${profile.college}` : ''}

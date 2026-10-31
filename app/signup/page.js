@@ -7,7 +7,7 @@ import { COLLEGES, ZONES } from '../../lib/colleges';
 export default function Signup() {
   const router = useRouter();
   const [f, setF] = useState({
-    name: '', maatramId: '', password: '', confirm: '', role: 'student',
+    name: '', maatramId: '', email: '', password: '', confirm: '', role: 'student',
     college: '', otherCollege: '', zone: '',
   });
   const [error, setError] = useState('');
@@ -72,7 +72,7 @@ export default function Signup() {
       return;
     }
 
-    router.push('/dashboard/');
+    if (f.email.trim()) { await supabase.from('contacts').upsert({ user_id: user.id, email: f.email.trim() }); } router.push('/dashboard/');
   }
 
   return (
@@ -85,7 +85,7 @@ export default function Signup() {
         <label>Maatram ID</label>
         <input value={f.maatramId} onChange={set('maatramId')} required />
 
-        <label>Create a password (at least 8 characters)</label>
+        <label>Email for notifications (optional)</label><input type="email" value={f.email} onChange={set('email')} /><p className="small">Only used to send you reminders. Nobody else can see it.</p><label>Create a password (at least 8 characters)</label>
         <input type="password" value={f.password} onChange={set('password')} required />
 
         <label>Confirm password</label>
