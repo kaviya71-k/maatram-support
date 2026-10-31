@@ -9,7 +9,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Times New Roman', Times, serif;
   color: #111;
   background: var(--white);
   line-height: 1.6;
