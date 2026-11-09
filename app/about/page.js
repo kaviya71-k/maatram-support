@@ -2,7 +2,7 @@ const ROWS = [
   ['Record a query from any channel in under a minute (student, institution, category, channel, priority, description, attachment)', 'Log a query. The Office Team can log one for a student who called, messaged or emailed.'],
   ['Assign each query to a coordinator, by rules or manually, with reassignment and full history', 'Automatic by rules (Admin > Assignment rules). Assign / reassign on the query page. Every change is in History.'],
   ['Track status through clear stages with notes and a time-stamped history', 'New, Assigned, In progress, Waiting for student, Resolved, Closed. Progress bar and History on every query.'],
-  ['Follow-up reminders, overdue flags, escalation, and a reminder to the student', 'Runs every hour (and on demand in Admin). In-app notifications and email. Escalation: Anchor, Mentor, Zone In-charge, Office.'],
+  ['Follow-up reminders, overdue flags, escalation, and a reminder to the student', 'Runs every hour (and on demand in Admin). In-app notifications and email. Escalation: Anchor, Zone In-charge, Mentor, Office.'],
   ['Different access for Student representative, Coordinator and Admin', 'Student; Coordinator (Anchor, Mentor, Zone In-charge); Admin (Office Team: categories, rules, users, reports).'],
   ['Dashboard with open and overdue queries, queries per coordinator, average time to resolve, common categories', 'Office dashboard: stat cards and charts.'],
   ['Find any query by student, category, status, coordinator or date; tell the student when it is resolved', 'Search and filters on the dashboard. The student gets a notification and an email.'],
@@ -44,8 +44,8 @@ export default function About() {
         <h3>Roles</h3>
         <p><b>Student:</b> logs queries and sees only their own.</p>
         <p><b>Anchor:</b> an alumnus of the college who mentors students of one college and one year. Sees only those students' queries.</p>
-        <p><b>Mentor:</b> the chief member of a college. Sees queries from their zone.</p>
-        <p><b>Zone In-charge:</b> looks after all colleges in a zone.</p>
+        <p><b>Mentor:</b> the chief member of a college, senior to the Zone In-charge. Sees queries from their zone.</p>
+        <p><b>Zone In-charge:</b> looks after all colleges in a zone and escalates to the Mentor.</p>
         <p><b>Office Team (Admin):</b> oversees everything and manages categories, rules, users and reports.</p>
       </div>
 

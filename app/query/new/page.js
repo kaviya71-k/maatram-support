@@ -7,8 +7,8 @@ import { CATEGORIES, CHANNELS, PRIORITIES } from '../../../lib/constants';
 
 const VISIBILITY = [
   { key: 'anchor', label: 'Anchor', help: 'Your alumni mentor for your college and year.' },
-  { key: 'mentor', label: 'Mentor', help: 'The chief member of your college.' },
-  { key: 'zone', label: 'Zone In-charge', help: 'Head of all the colleges in your zone.' },
+  
+  { key: 'zone', label: 'Zone In-charge', help: 'Looks after all the colleges in your zone.' }, { key: 'mentor', label: 'Mentor', help: 'The chief member of your college. Senior to the Zone In-charge.' },
   { key: 'office', label: 'Office Team', help: 'Oversees everything. Always included.' },
 ];
 

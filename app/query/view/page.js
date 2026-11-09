@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import useProfile from '../../../components/useProfile';
 import { STATUSES, ROLE_LABEL } from '../../../lib/constants';
 
-const CHAIN = ['anchor', 'mentor', 'zone', 'office'];
+const CHAIN = ['anchor', 'zone', 'mentor', 'office'];
 const STEPS = ['New', 'Assigned', 'In progress', 'Waiting for student', 'Resolved'];
 
 function whyAssigned(a) {
