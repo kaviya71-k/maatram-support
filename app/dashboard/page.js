@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import useProfile from '../../components/useProfile';
 import { CATEGORIES, STATUSES, ROLE_LABEL, OVERDUE_HOURS } from '../../lib/constants';
 
+const STEPS = ['New', 'Assigned', 'In progress', 'Waiting for student', 'Resolved'];
 const isOpen = (q) => !['Resolved', 'Closed'].includes(q.status);
 const isOverdue = (q) =>
   isOpen(q) && Date.now() - new Date(q.updated_at).getTime() > OVERDUE_HOURS * 3600 * 1000;
@@ -19,23 +20,37 @@ function countBy(arr, fn) {
   return Object.entries(m).map(([name, count]) => ({ name, count }));
 }
 
+function Progress({ status }) {
+  const idx = status === 'Closed' ? STEPS.length - 1 : STEPS.indexOf(status);
+  return (
+    <div className="steps">
+      {STEPS.map((s, i) => (
+        <span key={s} className={'step' + (i <= idx ? ' done' : '') + (i === idx ? ' now' : '')}>{s}</span>
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const profile = useProfile();
   const [queries, setQueries] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [tab, setTab] = useState('mine');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [category, setCategory] = useState('');
-  const [assigned, setAssigned] = useState('all');
+  const [coordinator, setCoordinator] = useState('');
   const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
 
   useEffect(() => {
     if (!profile) return;
+    if (profile.role === 'office') setTab('all');
     async function load() {
       const { data } = await supabase
         .from('queries')
-        .select('*, student:profiles!student_id(name,maatram_id,college), assignee:profiles!assigned_to(name)')
+        .select('*, student:profiles!student_id(name,maatram_id,college), assignee:profiles!assigned_to(name,role)')
         .order('created_at', { ascending: false });
       setQueries(data || []);
       const { data: n } = await supabase
@@ -50,19 +65,36 @@ export default function Dashboard() {
     load();
   }, [profile]);
 
-  const filtered = useMemo(
+  const coordinators = useMemo(
+    () => Array.from(new Set(queries.map((q) => q.assignee?.name).filter(Boolean))).sort(),
+    [queries]
+  );
+
+  const tabQueries = useMemo(
     () =>
       queries.filter((q) => {
+        if (tab === 'mine') return profile && q.assigned_to === profile.id && isOpen(q);
+        if (tab === 'waiting') return q.status === 'Waiting for student';
+        if (tab === 'overdue') return isOverdue(q);
+        if (tab === 'unassigned') return !q.assigned_to && isOpen(q);
+        return true;
+      }),
+    [queries, tab, profile]
+  );
+
+  const filtered = useMemo(
+    () =>
+      tabQueries.filter((q) => {
         const text = `${q.student?.name || ''} ${q.student?.maatram_id || ''} ${q.description}`.toLowerCase();
         if (search && !text.includes(search.toLowerCase())) return false;
         if (status && q.status !== status) return false;
         if (category && q.category !== category) return false;
-        if (assigned === 'mine' && q.assigned_to !== profile?.id) return false;
-        if (assigned === 'unassigned' && q.assigned_to) return false;
+        if (coordinator && q.assignee?.name !== coordinator) return false;
         if (from && new Date(q.created_at) < new Date(from)) return false;
+        if (to && new Date(q.created_at) > new Date(to + 'T23:59:59')) return false;
         return true;
       }),
-    [queries, search, status, category, assigned, from, profile]
+    [tabQueries, search, status, category, coordinator, from, to]
   );
 
   async function markRead() {
@@ -73,38 +105,75 @@ export default function Dashboard() {
   if (!profile) return <div className="page"><p>Loading...</p></div>;
 
   const isStaff = profile.role !== 'student';
-  const open = queries.filter(isOpen);
-  const overdue = queries.filter(isOverdue);
-  const done = queries.filter((q) => !isOpen(q));
-  const avg = done.length
-    ? (done.reduce((s, q) => s + (new Date(q.updated_at) - new Date(q.created_at)), 0) / done.length / 3600000).toFixed(1)
-    : '-';
-  const byCategory = countBy(queries, (q) => q.category);
-  const byCoordinator = countBy(open, (q) => q.assignee?.name || 'Unassigned');
+  const isOffice = profile.role === 'office';
 
-  return (
-    <div className="page">
-      <h1>Welcome, {profile.name}</h1><p className="small"><Link href="/settings">Notification email settings</Link></p>
+  const header = (
+    <>
+      <h1>Welcome, {profile.name}</h1>
       <p className="small">
         <span className="badge">{ROLE_LABEL[profile.role]}</span> {profile.maatram_id}
         {profile.college ? ` - ${profile.college}` : ''}
         {profile.zone ? ` - ${profile.zone}` : ''}
+        {profile.year ? ` - Year ${profile.year}` : ''}
+        {' - '}<Link href="/settings">Notification email settings</Link>
       </p>
-
       {notes.length > 0 && (
         <div style={{ margin: '20px 0' }}>
           {notes.map((n) => <div className="notice" key={n.id}>{n.message}</div>)}
           <button className="btn" onClick={markRead}>Mark all read</button>
         </div>
       )}
+    </>
+  );
 
-      {!isStaff && (
+  if (!isStaff) {
+    return (
+      <div className="page">
+        {header}
         <div style={{ margin: '20px 0' }}>
           <Link href="/query/new" className="btn">Log a new query</Link>
         </div>
-      )}
+        <h2 style={{ fontWeight: 400 }}>My queries</h2>
+        {loaded && queries.length === 0 && <p>You have not logged any query yet.</p>}
+        {queries.map((q) => (
+          <div className="qcard" key={q.id}>
+            <b>{q.category}</b> {q.is_emergency && <span className="emergency">EMERGENCY</span>}
+            <span className="small"> - via {q.channel} - {new Date(q.created_at).toLocaleDateString()}</span>
+            <p style={{ margin: '6px 0' }}>{q.description}</p>
+            <Progress status={q.status} />
+            <p className="small">Assigned to: {q.assignee?.name || 'Not assigned yet'}</p>
+            <Link href={`/query/view?id=${q.id}`}>Open</Link>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-      {isStaff && (
+  const open = queries.filter(isOpen);
+  const overdue = queries.filter(isOverdue);
+  const done = queries.filter((q) => !isOpen(q));
+  const mine = queries.filter((q) => q.assigned_to === profile.id && isOpen(q));
+  const waiting = queries.filter((q) => q.status === 'Waiting for student');
+  const unassigned = queries.filter((q) => !q.assigned_to && isOpen(q));
+  const avg = done.length
+    ? (done.reduce((s, q) => s + (new Date(q.updated_at) - new Date(q.created_at)), 0) / done.length / 3600000).toFixed(1)
+    : '-';
+  const byCategory = countBy(queries, (q) => q.category);
+  const byCoordinator = countBy(open, (q) => q.assignee?.name || 'Unassigned');
+
+  const tabs = [
+    ['mine', `My queue (${mine.length})`],
+    ['waiting', `Waiting for student (${waiting.length})`],
+    ['overdue', `Overdue (${overdue.length})`],
+    ...(isOffice ? [['unassigned', `Unassigned (${unassigned.length})`]] : []),
+    ['all', `All visible to me (${queries.length})`],
+  ];
+
+  return (
+    <div className="page">
+      {header}
+
+      {isOffice && (
         <>
           <div className="stats">
             <div className="stat"><b>{open.length}</b>Open queries</div>
@@ -112,7 +181,6 @@ export default function Dashboard() {
             <div className="stat"><b>{done.length}</b>Resolved / closed</div>
             <div className="stat"><b>{avg}</b>Avg hours to resolve</div>
           </div>
-
           <div className="grid" style={{ marginBottom: 30 }}>
             <div className="card">
               <h3>Top categories</h3>
@@ -140,7 +208,13 @@ export default function Dashboard() {
         </>
       )}
 
-      <h2 style={{ fontWeight: 400 }}>{isStaff ? 'Queries' : 'My queries'}</h2>
+      <div className="tabs">
+        {tabs.map(([key, label]) => (
+          <button key={key} className={'tab' + (tab === key ? ' active' : '')} onClick={() => setTab(key)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="filters">
         <input placeholder="Search student, ID or text" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -152,14 +226,12 @@ export default function Dashboard() {
           <option value="">All categories</option>
           {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select>
-        {isStaff && (
-          <select value={assigned} onChange={(e) => setAssigned(e.target.value)}>
-            <option value="all">All coordinators</option>
-            <option value="mine">Assigned to me</option>
-            <option value="unassigned">Unassigned</option>
-          </select>
-        )}
+        <select value={coordinator} onChange={(e) => setCoordinator(e.target.value)}>
+          <option value="">All coordinators</option>
+          {coordinators.map((c) => <option key={c}>{c}</option>)}
+        </select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} title="Created from" />
+        <input type="date" value={to} onChange={(e) => setTo(e.target.value)} title="Created until" />
       </div>
 
       <div className="table-wrap">
@@ -180,13 +252,13 @@ export default function Dashboard() {
                   <span className="badge">{q.status}</span>
                   {isOverdue(q) && <span className="emergency"> overdue</span>}
                 </td>
-                <td>{q.assignee?.name || '-'}</td>
+                <td>{q.assignee ? `${q.assignee.name} (${ROLE_LABEL[q.assignee.role]})` : '-'}</td>
                 <td>{new Date(q.created_at).toLocaleDateString()}</td>
                 <td><Link href={`/query/view?id=${q.id}`}>View</Link></td>
               </tr>
             ))}
             {loaded && filtered.length === 0 && (
-              <tr><td colSpan={7}>No queries found.</td></tr>
+              <tr><td colSpan={7}>No queries here.</td></tr>
             )}
           </tbody>
         </table>

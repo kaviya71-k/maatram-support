@@ -1,4 +1,4 @@
-'use client';
+'use client'; import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import useProfile from '../../components/useProfile';
@@ -99,7 +99,7 @@ export default function Admin() {
 
   return (
     <div className="page">
-      <h1>Admin console</h1>
+      <h1>Admin console</h1><p><Link href="/admin/staff">Add staff accounts (anchors, mentors, zone in-charges, office)</Link></p>
       <p className="small">Categories, assignment rules, users, reminders and reports.</p>
       {msg && <p className="msg-error">{msg}</p>}
 

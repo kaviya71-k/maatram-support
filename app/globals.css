@@ -124,3 +124,12 @@ html, body, input, select, textarea, button, table {
   font-variant-numeric: lining-nums tabular-nums;
 }
 .stat b { font-family: Arial, Helvetica, sans-serif; font-weight: 700; }
+
+.steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.step { font-size: 12px; padding: 4px 10px; border: 1px solid #ccc; border-radius: 999px; color: #777; background: #fff; }
+.step.done { background: #fff6c2; border-color: var(--gold); color: #000; }
+.step.now { background: var(--black); color: var(--gold); border-color: var(--black); }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 0; }
+.tab { padding: 8px 18px; border: 1px solid #000; border-radius: 999px; background: #fff; font-family: inherit; cursor: pointer; }
+.tab.active { background: #000; color: var(--gold); }
+.qcard { background: #fff; border-left: 3px solid var(--gold); padding: 18px 22px; box-shadow: 0 4px 14px rgba(0,0,0,.08); margin-bottom: 16px; }

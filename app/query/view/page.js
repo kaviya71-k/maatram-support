@@ -7,6 +7,15 @@ import useProfile from '../../../components/useProfile';
 import { STATUSES, ROLE_LABEL } from '../../../lib/constants';
 
 const CHAIN = ['anchor', 'mentor', 'zone', 'office'];
+const STEPS = ['New', 'Assigned', 'In progress', 'Waiting for student', 'Resolved'];
+
+function whyAssigned(a) {
+  if (!a) return 'Not assigned yet. The Office Team or a coordinator can assign it.';
+  if (a.role === 'anchor') return `${a.name} is the Anchor for ${a.college}, year ${a.year}.`;
+  if (a.role === 'mentor') return `${a.name} is the Mentor for ${a.college}.`;
+  if (a.role === 'zone') return `${a.name} is the Zone In-charge for ${a.zone}.`;
+  return `${a.name} is in the Office Team, which oversees every query.`;
+}
 
 function Detail() {
   const id = useSearchParams().get('id');
@@ -24,7 +33,7 @@ function Detail() {
     if (!id) return;
     const { data } = await supabase
       .from('queries')
-      .select('*, student:profiles!student_id(name,maatram_id,college,zone,year), assignee:profiles!assigned_to(name,role)')
+      .select('*, student:profiles!student_id(name,maatram_id,college,zone,year), assignee:profiles!assigned_to(name,role,college,zone,year)')
       .eq('id', id)
       .single();
     setQ(data);
@@ -35,7 +44,11 @@ function Detail() {
       .eq('query_id', id)
       .order('created_at', { ascending: true });
     setHistory(h || []);
-    const { data: s } = await supabase.from('profiles').select('id,name,role,college,year').neq('role', 'student').order('name');
+    const { data: s } = await supabase
+      .from('profiles')
+      .select('id,name,role,college,year')
+      .neq('role', 'student')
+      .order('name');
     setStaff(s || []);
   }, [id]);
 
@@ -124,6 +137,10 @@ function Detail() {
   if (!profile || !q) return <div className="page"><p>Loading...</p></div>;
 
   const isStaff = profile.role !== 'student';
+  const idx = q.status === 'Closed' ? STEPS.length - 1 : STEPS.indexOf(q.status);
+  const assignable = staff.filter(
+    (s) => s.role !== 'anchor' || (s.college === q.student?.college && s.year === q.student?.year)
+  );
 
   return (
     <div className="page">
@@ -132,15 +149,36 @@ function Detail() {
         {q.category} query {q.is_emergency && <span className="emergency">EMERGENCY</span>}
       </h1>
 
+      <div className="steps">
+        {STEPS.map((s, i) => (
+          <span key={s} className={'step' + (i <= idx ? ' done' : '') + (i === idx ? ' now' : '')}>{s}</span>
+        ))}
+      </div>
+
       <div className="panel">
-        <p><b>Student:</b> {q.student?.name} ({q.student?.maatram_id}) - {q.student?.college || '-'}</p>
-        <p><b>Channel:</b> {q.channel} &nbsp; <b>Priority:</b> {q.priority} &nbsp; <b>Status:</b> <span className="badge">{q.status}</span></p>
-        <p><b>Assigned to:</b> {q.assignee?.name || 'Nobody yet'}</p>
-        <p><b>Visible to:</b> {q.visible_to.map((r) => ROLE_LABEL[r]).join(', ')}</p>
+        <p><b>Student:</b> {q.student?.name} ({q.student?.maatram_id}) - {q.student?.college}, {q.student?.zone}, year {q.student?.year}</p>
+        <p><b>Channel:</b> {q.channel} &nbsp; <b>Priority:</b> {q.priority}</p>
         <p style={{ marginTop: 10 }}>{q.description}</p>
         {q.attachment_url && (
           <p style={{ marginTop: 10 }}><a href={q.attachment_url} target="_blank" rel="noreferrer">Open attachment</a></p>
         )}
+      </div>
+
+      <div className="panel">
+        <h3>Who is handling it</h3>
+        <p>{whyAssigned(q.assignee)}</p>
+        <h3 style={{ marginTop: 16 }}>Escalation path</h3>
+        <p className="small">If nobody answers in time, the query moves up this chain. Highlighted levels can see it now; the dark one is handling it.</p>
+        <div className="steps">
+          {CHAIN.map((r) => (
+            <span
+              key={r}
+              className={'step' + (q.visible_to.includes(r) ? ' done' : '') + (q.assignee?.role === r ? ' now' : '')}
+            >
+              {ROLE_LABEL[r]}
+            </span>
+          ))}
+        </div>
       </div>
 
       {isStaff && (
@@ -159,7 +197,7 @@ function Detail() {
           <label>Assign / reassign to</label>
           <select value={assignTo} onChange={(e) => setAssignTo(e.target.value)}>
             <option value="">Choose a person</option>
-            {staff.filter((s) => s.role !== 'anchor' || (s.college === q.student?.college && s.year === q.student?.year)).map((s) => <option key={s.id} value={s.id}>{s.name} ({ROLE_LABEL[s.role]})</option>)}
+            {assignable.map((s) => <option key={s.id} value={s.id}>{s.name} ({ROLE_LABEL[s.role]})</option>)}
           </select>
           <button className="btn" disabled={busy || !assignTo} onClick={assign}>Assign</button>
 
@@ -184,7 +222,7 @@ function Detail() {
           <div key={h.id}>
             <b>{h.action}</b>
             <div className="small">
-              {h.changer?.name} ({ROLE_LABEL[h.changer?.role] || '-'}) - {new Date(h.created_at).toLocaleString()}
+              {h.changer ? `${h.changer.name} (${ROLE_LABEL[h.changer.role]})` : 'System'} - {new Date(h.created_at).toLocaleString()}
             </div>
             {h.note && <div>{h.note}</div>}
           </div>
