@@ -44,7 +44,7 @@ export default function About() {
         <h3>Roles</h3>
         <p><b>Student:</b> logs queries and sees only their own.</p>
         <p><b>Anchor:</b> an alumnus of the college who mentors students of one college and one year. Sees only those students' queries.</p>
-        <p><b>Mentor:</b> the chief member of a college, senior to the Zone In-charge. Sees queries from their zone.</p>
+        <p><b>Mentor:</b> the chief member of a college, senior to the Zone In-charge. Sees only students of their own college, is notified of their queries, and steps in on important queries that stay unsolved for long.</p>
         <p><b>Zone In-charge:</b> looks after all colleges in a zone and escalates to the Mentor.</p>
         <p><b>Office Team (Admin):</b> oversees everything and manages categories, rules, users and reports.</p>
       </div>
@@ -54,7 +54,7 @@ export default function About() {
         <ul style={{ marginLeft: 20 }}>
           <li>Each student chooses their own password. It is stored hashed and nobody can read it. No mobile numbers are stored.</li>
           <li>Only students can sign up. The Office Team creates all staff accounts.</li>
-          <li>Row Level Security in the database: a student opens only their own queries, an anchor only students of their own college and year, and a mentor or zone in-charge only their own zone.</li>
+          <li>Row Level Security in the database: a student opens only their own queries, an anchor only students of their own college and year, a mentor only students of their own college, and a zone in-charge only their own zone.</li>
           <li>The student chooses which roles can see each query. The Office Team always has oversight.</li>
           <li>Escalation widens visibility one level at a time, and only when a query stays unanswered.</li>
           <li>Email notifications contain a short notice and a link, never the query details.</li>

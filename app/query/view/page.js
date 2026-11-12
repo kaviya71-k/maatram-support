@@ -137,6 +137,9 @@ function Detail() {
   if (!profile || !q) return <div className="page"><p>Loading...</p></div>;
 
   const isStaff = profile.role !== 'student';
+  const importantQuery = q.is_emergency || ['High', 'Urgent'].includes(q.priority);
+  const mentorMayAct = !['Resolved', 'Closed'].includes(q.status) && importantQuery && Date.now() - new Date(q.created_at).getTime() > 48 * 3600 * 1000;
+  const canAct = profile.role !== 'mentor' || mentorMayAct;
   const idx = q.status === 'Closed' ? STEPS.length - 1 : STEPS.indexOf(q.status);
   const assignable = staff.filter(
     (s) => s.role !== 'anchor' || (s.college === q.student?.college && s.year === q.student?.year)
@@ -181,7 +184,7 @@ function Detail() {
         </div>
       </div>
 
-      {isStaff && (
+      {isStaff && canAct && (
         <div className="panel">
           <h3>Work on this query</h3>
           <label>Note (saved in the history)</label>
@@ -214,7 +217,7 @@ function Detail() {
         </div>
       )}
 
-      {msg && <p className="msg-error">{msg}</p>}
+      {isStaff && !canAct && (<div className="notice">As the Mentor you are kept informed about this query. You can step in and solve it if it is important (High, Urgent or emergency) and still unsolved after 48 hours.</div>)}{msg && <p className="msg-error">{msg}</p>}
 
       <h3 style={{ marginTop: 20 }}>History</h3>
       <div className="timeline">

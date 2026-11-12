@@ -46,7 +46,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!profile) return;
-    if (profile.role === 'office') setTab('all');
+    if (profile.role === 'office' || profile.role === 'mentor') setTab('all');
     async function load() {
       const { data } = await supabase
         .from('queries')
