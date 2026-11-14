@@ -39,7 +39,7 @@ export default function Navbar() {
         { href: '/', label: 'Home' },
         { href: '/dashboard', label: 'Dashboard' },
         { href: '/query/new', label: 'Log a query' },
-        ...(role === 'office' ? [{ href: '/admin', label: 'Admin' }] : []),
+        ...(role === 'office' ? [{ href: '/analytics', label: 'Analytics' }, { href: '/admin', label: 'Admin' }] : []),
         { href: '/about', label: 'About' },
       ]
     : [
