@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { COLLEGES, ZONES } from '../../lib/colleges';
@@ -14,6 +14,18 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
 
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const [zoneMap, setZoneMap] = useState({});
+  useEffect(() => {
+    supabase.from('college_zones').select('college,zone').then(({ data }) => {
+      const m = {};
+      (data || []).forEach((r) => { m[r.college] = r.zone; });
+      setZoneMap(m);
+    });
+  }, []);
+  const pickCollege = (e) => {
+    const c = e.target.value;
+    setF({ ...f, college: c, zone: zoneMap[c] || f.zone });
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -98,7 +110,7 @@ export default function Signup() {
         <input type="password" value={f.confirm} onChange={set('confirm')} required />
 
         <label>College</label>
-        <select value={f.college} onChange={set('college')}>
+        <select value={f.college} onChange={pickCollege}>
           <option value="">Select your college</option>
           {COLLEGES.map((c) => <option key={c} value={c}>{c}</option>)}
           

@@ -99,7 +99,7 @@ export default function Admin() {
 
   return (
     <div className="page">
-      <h1>Admin console</h1><p><Link href="/admin/staff">Add staff accounts (anchors, mentors, zone in-charges, office)</Link></p>
+      <h1>Admin console</h1><p><Link href="/admin/settings">Settings: reminder times and college zones</Link></p><p><Link href="/admin/staff">Add staff accounts (anchors, mentors, zone in-charges, office)</Link></p>
       <p className="small">Categories, assignment rules, users, reminders and reports.</p>
       {msg && <p className="msg-error">{msg}</p>}
 
