@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 
 export default function Login() {
@@ -40,6 +40,7 @@ export default function Login() {
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
         {error && <p className="msg-error">{error}</p>}
+        <p className="small" style={{ textAlign: 'center', marginTop: 12 }}><Link href="/forgot-password">Forgot password?</Link></p>
 
         <div style={{ textAlign: 'center', marginTop: 20 }}>
           <button className="btn" disabled={loading}>
