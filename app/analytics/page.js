@@ -83,7 +83,7 @@ export default function Analytics() {
   return (
     <div className="page">
       <Link href="/dashboard">&larr; Back to dashboard</Link>
-      <h1 style={{ marginTop: 14 }}>Analytics</h1>
+      <h1 style={{ marginTop: 14 }}>Analytics</h1><p><Link href="/analytics/ratings">Student satisfaction ratings</Link></p>
       <p className="small">Office Team only. Based on {queries.length} queries.</p>
       {loaded && queries.length === 0 && <p>No queries yet.</p>}
 

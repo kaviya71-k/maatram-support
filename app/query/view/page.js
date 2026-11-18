@@ -8,6 +8,7 @@ import { STATUSES, ROLE_LABEL } from '../../../lib/constants';
 
 const CHAIN = ['anchor', 'zone', 'mentor', 'office'];
 const STEPS = ['New', 'Assigned', 'In progress', 'Waiting for student', 'Resolved'];
+const stars = (n) => '\u2605'.repeat(n) + '\u2606'.repeat(5 - n);
 
 function whyAssigned(a) {
   if (!a) return 'Not assigned yet. The Office Team or a coordinator can assign it.';
@@ -28,6 +29,12 @@ function Detail() {
   const [assignTo, setAssignTo] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [internal, setInternal] = useState([]);
+  const [inNote, setInNote] = useState('');
+  const [replies, setReplies] = useState([]);
+  const [feedback, setFeedback] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -52,7 +59,28 @@ function Detail() {
     setStaff(s || []);
   }, [id]);
 
+  const loadExtras = useCallback(async () => {
+    if (!id || !profile) return;
+    const { data: f } = await supabase.from('feedback').select('*').eq('query_id', id).maybeSingle();
+    setFeedback(f || null);
+    if (f) {
+      setRating(f.rating);
+      setComment(f.comment || '');
+    }
+    if (profile.role !== 'student') {
+      const { data: n } = await supabase
+        .from('internal_notes')
+        .select('*, author:profiles!author_id(name,role)')
+        .eq('query_id', id)
+        .order('created_at', { ascending: true });
+      setInternal(n || []);
+      const { data: r } = await supabase.from('canned_replies').select('*').order('title');
+      setReplies(r || []);
+    }
+  }, [id, profile]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadExtras(); }, [loadExtras]);
 
   async function addHistory(action, text) {
     await supabase.from('query_history').insert({
@@ -91,7 +119,10 @@ function Detail() {
   async function changeStatus() {
     const ok = await save({ status }, `Status changed to ${status}`, note);
     if (ok && ['Resolved', 'Closed', 'Waiting for student'].includes(status)) {
-      await notify(q.student_id, `Your query is now: ${status}`);
+      const text = status === 'Resolved'
+        ? 'Your query is now: Resolved. Please open it and rate the support you received.'
+        : `Your query is now: ${status}`;
+      await notify(q.student_id, text);
     }
   }
 
@@ -131,6 +162,46 @@ function Detail() {
       await load();
     }
     if (q.assigned_to) await notify(q.assigned_to, 'The student replied on a query.');
+  }
+
+  async function addInternal() {
+    if (!inNote.trim()) return;
+    setBusy(true);
+    setMsg('');
+    const { error } = await supabase.from('internal_notes').insert({
+      query_id: id,
+      author_id: profile.id,
+      body: inNote.trim(),
+    });
+    setBusy(false);
+    if (error) {
+      setMsg(error.message);
+      return;
+    }
+    setInNote('');
+    await loadExtras();
+  }
+
+  async function submitFeedback() {
+    if (!rating) {
+      setMsg('Choose a rating from 1 to 5 stars.');
+      return;
+    }
+    setBusy(true);
+    setMsg('');
+    const { error } = await supabase.from('feedback').upsert({
+      query_id: id,
+      student_id: profile.id,
+      rating,
+      comment: comment.trim() || null,
+    });
+    setBusy(false);
+    if (error) {
+      setMsg(error.message);
+      return;
+    }
+    if (q.assigned_to) await notify(q.assigned_to, 'The student rated the support on a resolved query.');
+    await loadExtras();
   }
 
   if (!id) return <div className="page"><p>No query selected.</p></div>;
@@ -187,7 +258,20 @@ function Detail() {
       {isStaff && canAct && (
         <div className="panel">
           <h3>Work on this query</h3>
-          <label>Note (saved in the history)</label>
+
+          <label>Insert a saved reply</label>
+          <select
+            value=""
+            onChange={(e) => {
+              const r = replies.find((x) => x.id === e.target.value);
+              if (r) setNote(note ? note + '\n' + r.body : r.body);
+            }}
+          >
+            <option value="">Choose a saved reply</option>
+            {replies.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
+          </select>
+
+          <label>Note (saved in the history; the student can see it)</label>
           <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
 
           <label>Change status</label>
@@ -209,6 +293,31 @@ function Detail() {
         </div>
       )}
 
+      {isStaff && !canAct && (
+        <div className="notice">
+          As the Mentor you are kept informed about this query. You can step in and solve it if it is important (High, Urgent or emergency) and still unsolved after 48 hours.
+        </div>
+      )}
+
+      {isStaff && (
+        <div className="panel" style={{ borderLeft: '3px solid #f0b90b' }}>
+          <h3>Internal notes (staff only)</h3>
+          <p className="small">The student cannot see these notes, and they are not part of the history or the emails.</p>
+          <div className="timeline">
+            {internal.map((n) => (
+              <div key={n.id}>
+                <b>{n.author?.name}</b> ({ROLE_LABEL[n.author?.role] || '-'})
+                <div className="small">{new Date(n.created_at).toLocaleString()}</div>
+                <div>{n.body}</div>
+              </div>
+            ))}
+            {internal.length === 0 && <p className="small">No internal notes yet.</p>}
+          </div>
+          <textarea rows={2} placeholder="Write a private note for the team" value={inNote} onChange={(e) => setInNote(e.target.value)} />
+          <button className="btn" disabled={busy || !inNote.trim()} onClick={addInternal}>Add internal note</button>
+        </div>
+      )}
+
       {!isStaff && q.status !== 'Closed' && (
         <div className="panel">
           <h3>Add a reply</h3>
@@ -217,7 +326,37 @@ function Detail() {
         </div>
       )}
 
-      {isStaff && !canAct && (<div className="notice">As the Mentor you are kept informed about this query. You can step in and solve it if it is important (High, Urgent or emergency) and still unsolved after 48 hours.</div>)}{msg && <p className="msg-error">{msg}</p>}
+      {!isStaff && ['Resolved', 'Closed'].includes(q.status) && (
+        <div className="panel">
+          <h3>Rate the support you received</h3>
+          <div>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-label={`${n} stars`}
+                onClick={() => setRating(n)}
+                style={{ background: 'none', border: 'none', fontSize: 32, cursor: 'pointer', color: '#f0b90b' }}
+              >
+                {n <= rating ? '\u2605' : '\u2606'}
+              </button>
+            ))}
+          </div>
+          <textarea rows={2} placeholder="Optional comment" value={comment} onChange={(e) => setComment(e.target.value)} />
+          <button className="btn" disabled={busy} onClick={submitFeedback}>{feedback ? 'Update rating' : 'Submit rating'}</button>
+          {feedback && <p className="msg-ok">Thank you. Your rating: {stars(feedback.rating)}</p>}
+        </div>
+      )}
+
+      {isStaff && feedback && (
+        <div className="panel">
+          <h3>Student feedback</h3>
+          <p style={{ color: '#f0b90b', fontSize: 24 }}>{stars(feedback.rating)}</p>
+          {feedback.comment && <p>{feedback.comment}</p>}
+        </div>
+      )}
+
+      {msg && <p className="msg-error">{msg}</p>}
 
       <h3 style={{ marginTop: 20 }}>History</h3>
       <div className="timeline">
