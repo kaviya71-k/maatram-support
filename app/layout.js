@@ -1,6 +1,7 @@
 import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Assistant from '../components/Assistant';
 
 export const metadata = {
   title: 'Maatram Student Support and Follow-up System',
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
         <Navbar />
         <main>{children}</main>
         <Footer />
+        <Assistant />
       </body>
     </html>
   );
